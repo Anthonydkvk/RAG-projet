@@ -1,0 +1,4 @@
+La certification SecNumCloud est un label français délivré par l’ANSSI. 
+Elle garantit qu’un fournisseur de cloud respecte des exigences strictes en matière de sécurité, 
+de souveraineté et de conformité juridique. 
+Les données doivent être hébergées sur le territoire national et gérées par des entités européennes.

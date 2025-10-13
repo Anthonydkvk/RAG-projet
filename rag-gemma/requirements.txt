@@ -1,0 +1,5 @@
+chromadb[server]==0.5.7
+sentence-transformers==2.2.2
+torch==2.3.0
+requests==2.31.0
+transformers==4.34.0
