@@ -1,34 +1,14 @@
-import os
-import requests
-from sentence_transformers import SentenceTransformer
-from chromadb import Client
-from chromadb.config import Settings
+#app.py
 
-# === CONFIG ===
-COLLECTION_NAME = "docs_collection"
-DATA_DIR = "docs"  # dossier contenant les fichiers .txt
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "gemma3:4b"  # ou "gemma:2b"
+from chroma_utils import get_chroma_client, get_or_create_collection
+from embeddings import load_embedding_model, vectorize_documents
+from ollama_utils import ask_gemma_with_context
+from config import DATA_DIR
 
-# === Connexion à ChromaDB (nouvelle version) ===
-settings = Settings(
-    persist_directory="./chroma_db",  # persistance sur disque (facultatif)
-    anonymized_telemetry=False        # désactiver télémétrie
-)
-client = Client(settings=settings)
-
-# Crée ou récupère la collection
-try:
-    collection = client.get_collection(COLLECTION_NAME)
-    print(f"Collection '{COLLECTION_NAME}' trouvée.")
-except Exception:
-    collection = client.create_collection(COLLECTION_NAME)
-    print(f"Nouvelle collection créée : '{COLLECTION_NAME}'")
-
-# === Chargement du modèle d'embedding ===
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-print(f"Chargement du modèle d'embedding : {EMBEDDING_MODEL}")
-model = SentenceTransformer(EMBEDDING_MODEL)
+# Initialisation
+client = get_chroma_client()
+collection = get_or_create_collection(client)
+model = load_embedding_model()
 
 # === Menu utilisateur ===
 while True:
@@ -40,35 +20,7 @@ while True:
     choice = input("Choix : ").strip()
 
     if choice == "1":
-        if not os.path.exists(DATA_DIR):
-            os.makedirs(DATA_DIR)
-            print(f"Dossier '{DATA_DIR}' créé. Ajoute des fichiers .txt dedans.")
-            continue
-
-        files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
-        if not files:
-            print(f"Aucun fichier .txt trouvé dans '{DATA_DIR}'")
-            continue
-
-        print(f"{len(files)} fichiers trouvés dans '{DATA_DIR}'")
-
-        for idx, filename in enumerate(files):
-            filepath = os.path.join(DATA_DIR, filename)
-            with open(filepath, "r", encoding="utf-8") as f:
-                text = f.read()
-
-            embedding = model.encode([text]).tolist()
-            doc_id = f"doc_{idx}"
-
-            collection.add(
-                documents=[text],
-                embeddings=embedding,
-                ids=[doc_id],
-                metadatas=[{"source": filename}],
-            )
-            print(f"Document ajouté : {filename}")
-
-        print("\nVectorisation terminée !")
+        vectorize_documents(model, collection)
 
     elif choice == "2":
         query = input("\nPose ta question : ")
@@ -94,43 +46,10 @@ while True:
             print("Aucun document trouvé pour cette question.")
             continue
 
-        context = "\n\n".join(docs)
-        prompt = f"""
-Tu es un assistant utile. Réponds à la question suivante en te basant UNIQUEMENT
-sur le contexte fourni.
-
---- CONTEXTE ---
-{context}
-
---- QUESTION ---
-{query}
-
-Réponse :
-"""
-
-        response = requests.post(OLLAMA_URL, json={
-            "model": MODEL_NAME,
-            "prompt": prompt,
-            "stream": True
-        }, stream=True)
-
-        print("\nRéponse :\n")
-        if response.status_code == 200:
-            for line in response.iter_lines():
-                if line:
-                    try:
-                        data = line.decode("utf-8")
-                        if '"response":"' in data:
-                            text_part = data.split('"response":"')[1].split('"')[0]
-                            print(text_part, end="", flush=True)
-                    except Exception:
-                        pass
-            print("\n")
-        else:
-            print("Erreur lors de l'appel à Gemma :", response.text)
+        ask_gemma_with_context(query, docs)
 
     elif choice == "4":
-        print("Au revoir !")
+        print("Au revoir 👋")
         break
 
     else:
