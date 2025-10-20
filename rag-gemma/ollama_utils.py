@@ -37,5 +37,7 @@ Réponse :
                 except Exception:
                     pass
         print("\n")
+        return response.iter_lines()
     else:
         print("❌ Erreur lors de l'appel à Gemma :", response.text)
+        return None

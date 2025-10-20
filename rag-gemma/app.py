@@ -38,15 +38,39 @@ while True:
                 print(f"Distance : {distances[i] if i < len(distances) else 'N/A'}")
 
     elif choice == "3":
-        query = input("\nPose ta question : ")
-        results = collection.query(query_texts=[query], n_results=3)
-        docs = results.get("documents", [[]])[0]
+        print("\nMode discussion avec Gemma (tape écrit \"exit\" pour quitter)\n")
+        history = []
 
-        if not docs:
-            print("Aucun document trouvé pour cette question.")
-            continue
+        while True: 
+            query = input("\nPose ta question : ")
+            if query.lower() in ["exit"]:
+                print("Fin de la discussion.")
+                break
 
-        ask_gemma_with_context(query, docs)
+            results = collection.query(query_texts=[query], n_results=3)
+            docs = results.get("documents", [[]])[0]
+            distances = results.get("distances", [[]])[0]
+
+            if not docs:
+                print("Aucun document trouvé pour cette question.")
+            else:
+                print("\n=== Résultats similaires ===")
+                for i, doc in enumerate(docs):
+                    print(f"\n--- Résultat {i+1} ---")
+                    print(doc)
+                    print(f"Distance : {distances[i] if i < len(distances) else 'N/A'}")
+
+            # Construction du prompt avec historique
+            full_prompt = ""
+            for turn in history:
+                full_prompt += f"Utilisateur : {turn['user']}\nGemma : {turn['bot']}\n"
+            full_prompt += f"Utilisateur : {query}\nGemma :"
+
+
+            response = ask_gemma_with_context(full_prompt, docs)
+
+            # On ajoute à l’historique
+            history.append({"user": query, "bot": response})
 
     elif choice == "4":
         print("Au revoir 👋")
