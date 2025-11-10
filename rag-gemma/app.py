@@ -61,13 +61,13 @@ while True:
                     print(f"Distance : {distances[i] if i < len(distances) else 'N/A'}")
 
             # Construction du prompt avec historique
-            full_prompt = ""
-            for turn in history:
-                full_prompt += f"Utilisateur : {turn['user']}\nGemma : {turn['bot']}\n"
-            full_prompt += f"Utilisateur : {query}\nGemma :"
+            #full_prompt = ""
+            #for turn in history:
+            #    full_prompt += f"Utilisateur : {turn['user']}\nGemma : {turn['bot']}\n"
+            #full_prompt += f"Utilisateur : {query}\nGemma :"
 
 
-            response = ask_gemma_with_context(full_prompt, docs)
+            response = ask_gemma_with_context(query, docs, history)
 
             # On ajoute à l’historique
             history.append({"user": query, "bot": response})

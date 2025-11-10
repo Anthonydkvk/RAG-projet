@@ -3,20 +3,32 @@
 import requests
 from config import OLLAMA_URL, MODEL_NAME
 
-def ask_gemma_with_context(query, docs):
+def ask_gemma_with_context(query, docs, history=None):
     """Pose une question à Gemma avec un contexte fourni."""
     context = "\n\n".join(docs)
-    prompt = f"""
-Tu es un assistant utile. Réponds à la question suivante en te basant UNIQUEMENT
-sur le contexte fourni.
 
---- CONTEXTE ---
+    # Formatage lisible de l’historique
+    dialogue = ""
+    if history:
+        #for turn in history[-5:]:  # on garde les 5 derniers tours
+        for turn in history:  # on considère tout l'historique
+            dialogue += f"Utilisateur : {turn['user']}\nGemma : {turn['bot']}\n"
+
+
+    prompt = f"""
+Tu es Gemma, une assistante IA utile et amicale. 
+Réponds à l'utilisateur en te basant sur le contexte fourni ET sur la conversation précédente.
+
+--- CONTEXTE DOCUMENTAIRE ---
 {context}
 
---- QUESTION ---
-{query}
+--- CONVERSATION PRÉCÉDENTE ---
+{dialogue}
 
-Réponse :
+--- NOUVELLE QUESTION ---
+Utilisateur : {query}
+
+Gemma :
 """
 
     response = requests.post(OLLAMA_URL, json={
