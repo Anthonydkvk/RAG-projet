@@ -5,7 +5,7 @@ from config import OLLAMA_URL, MODEL_NAME
 
 def ask_gemma_with_context(query, docs, history=None):
     """Pose une question à Gemma avec un contexte fourni."""
-    context = "\n\n".join(docs)
+    context = "\n\n".join(docs) # Concatène les documents avec des sauts de ligne
 
     # Formatage lisible de l’historique
     dialogue = ""
@@ -31,12 +31,7 @@ Utilisateur : {query}
 Gemma :
 """
 
-    response = requests.post(OLLAMA_URL, json={
-        "model": MODEL_NAME,
-        "prompt": prompt,
-        "stream": True
-    }, stream=True)
-
+    response = requests.post(OLLAMA_URL, json={"model": MODEL_NAME,"prompt": prompt,"stream": True}, stream=True)
     print("\nRéponse :\n")
     if response.status_code == 200:
         for line in response.iter_lines():

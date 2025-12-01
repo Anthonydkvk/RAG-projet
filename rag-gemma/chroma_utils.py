@@ -1,6 +1,6 @@
 # chroma_utils.py
 
-from chromadb import Client
+from chromadb import Client 
 from chromadb.config import Settings
 from config import CHROMA_DIR, COLLECTION_NAME
 
@@ -9,7 +9,7 @@ def get_chroma_client():
     settings = Settings(
         persist_directory=CHROMA_DIR,
         anonymized_telemetry=False
-    )
+    ) # Désactive la télémétrie anonymisée et configure le répertoire de persistance
     return Client(settings=settings)
 
 def get_or_create_collection(client):

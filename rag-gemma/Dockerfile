@@ -4,7 +4,8 @@ FROM python:3.11-slim
 # --- Variables d'environnement ---
 ENV PYTHONUNBUFFERED=1 \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    PORT=8000
 
 # --- Dossier de travail ---
 WORKDIR /rag-gemma
@@ -19,7 +20,8 @@ RUN apt-get update && \
 COPY requirements.txt /rag-gemma/
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir chromadb[server]==0.5.7
+    pip install --no-cache-dir chromadb[server]==0.5.7 \
+    flask flask-cors
 
 # --- Copier le reste du projet ---
 COPY . /rag-gemma
@@ -27,5 +29,5 @@ COPY . /rag-gemma
 # --- Ports exposés ---
 EXPOSE 8000
 
-# --- Commande par défaut pour lancer l'app ---
-CMD ["python3", "app.py"]
+# --- Commande par défaut pour lancer le serveur Flask ---
+CMD ["python3", "server.py"]
