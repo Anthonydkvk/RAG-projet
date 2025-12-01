@@ -66,6 +66,12 @@ pip install -r requirements.txt
 
 1) Mode CLI (interactif)
 
+Dans le fichier config.py, il faut définir OLLAMA_URL = "http://localhost:11434/api/generate" :
+
+OLLAMA_URL = "http://localhost:11434/api/generate" # pour tourner en local
+#OLLAMA_URL = "http://host.docker.internal:11434/api/generate" # pour Docker
+
+Ensuite :
 ```bash
 # Lance l'interface en ligne de commande
 python app.py
@@ -73,7 +79,7 @@ python app.py
 
 Le menu permet : vectoriser les documents (option 1), faire une recherche (option 2) ou discuter (option 3).
 
-2) Mode serveur (API + front-end)
+En plus : Mode serveur (API + front-end)
 
 ```bash
 python server.py
@@ -82,8 +88,14 @@ python server.py
 - Le serveur écoute par défaut sur le port 8000 (modifiable via la variable d'environnement `PORT`).
 - Ouvrez `http://localhost:8000/` pour accéder à l'interface web.
 
-3) Avec Docker
+2) Avec Docker
 
+Dans le fichier config.py, il faut définir OLLAMA_URL = "http://host.docker.internal:11434/api/generate" :
+
+#OLLAMA_URL = "http://localhost:11434/api/generate" # pour tourner en local
+OLLAMA_URL = "http://host.docker.internal:11434/api/generate" # pour Docker
+
+Ensuite :
 ```bash
 # Construire l'image
 docker build -t rag-gemma:latest .
