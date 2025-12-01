@@ -60,10 +60,10 @@ while True:
                     print(doc)
                     print(f"Distance : {distances[i] if i < len(distances) else 'N/A'}")
 
-            response = ask_gemma_with_context(query, docs, history)
+            ai_answer = ask_gemma_with_context(query, docs, history)
 
             # On ajoute à l’historique
-            history.append({"user": query, "bot": response})
+            history.append({"user": query, "bot": ai_answer})
 
     elif choice == "4":
         print("Au revoir 👋")
