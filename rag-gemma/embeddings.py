@@ -68,4 +68,4 @@ def vectorize_documents(model, collection):# ajoute des documents vectorisés à
         )# Ajoute le document à la collection Chroma
         print(f"Document ajouté : {filename}")
 
-    print("\n✅ Vectorisation terminée !")
+    print("\nVectorisation terminée !")

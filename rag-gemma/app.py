@@ -66,7 +66,7 @@ while True:
             history.append({"user": query, "bot": ai_answer})
 
     elif choice == "4":
-        print("Au revoir 👋")
+        print("Au revoir")
         break
 
     else:

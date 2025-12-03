@@ -18,7 +18,7 @@ model = load_embedding_model()
 def api_vectorize():
     try:
         vectorize_documents(model, collection)
-        return jsonify({"status": "Vectorisation terminée ✅"}), 200
+        return jsonify({"status": "Vectorisation terminée"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
