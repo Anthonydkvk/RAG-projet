@@ -1,0 +1,7 @@
+# Dockerfile.ollama
+FROM ollama/ollama:rocm
+
+# Start Ollama, pull model, stop
+RUN nohup bash -c "ollama serve &" && \
+    sleep 5 && \
+    ollama pull gemma:2b 

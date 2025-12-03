@@ -1,0 +1,32 @@
+
+services:
+  # Custom Ollama with pre-installed models
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama
+    container_name: ollama-gemma
+    ports:
+      - "11435:11434"
+    networks:
+      - rag-network
+   
+
+  # Your RAG application
+  rag-gemma:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-gemma
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - ollama
+    networks:
+      - rag-network
+
+
+networks:
+  rag-network:
