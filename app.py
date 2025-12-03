@@ -1,10 +1,7 @@
 #app.py
-
 from chroma_utils import get_chroma_client, get_or_create_collection
 from embeddings import load_embedding_model, vectorize_documents
 from ollama_utils import ask_gemma_with_context
-from config import DATA_DIR
-
 # Initialisation
 client = get_chroma_client()
 collection = get_or_create_collection(client)

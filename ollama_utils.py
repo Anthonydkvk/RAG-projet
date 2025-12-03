@@ -1,8 +1,11 @@
 # ollama_utils.py
-
+import os
+from dotenv import load_dotenv
 import requests
-from config import OLLAMA_URL, MODEL_NAME
-
+#from config import OLLAMA_URL, MODEL_NAME
+load_dotenv()
+OLLAMA_URL = os.getenv('OLLAMA_URL')
+MODEL_NAME = os.getenv('MODEL_NAME')
 def ask_gemma_with_context(query, docs, history=None):
     """Pose une question à Gemma avec un contexte fourni."""
     context = "\n\n".join(docs) # Concatène les documents avec des sauts de ligne

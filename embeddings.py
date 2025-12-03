@@ -1,11 +1,14 @@
 # embeddings.py
 
 import os
+from dotenv import load_dotenv
 from docx import Document
 import PyPDF2
 from sentence_transformers import SentenceTransformer
-from config import EMBEDDING_MODEL, DATA_DIR
-
+#from config import EMBEDDING_MODEL, DATA_DIR
+load_dotenv()
+EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL')
+DATA_DIR = os.getenv('DATA_DIR')
 def load_embedding_model():
     print(f"Chargement du modèle d'embedding : {EMBEDDING_MODEL}")
     return SentenceTransformer(EMBEDDING_MODEL) # Chargement du modèle d'embedding

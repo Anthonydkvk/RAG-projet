@@ -1,9 +1,12 @@
 # chroma_utils.py
-
+import os
+from dotenv import load_dotenv
 from chromadb import Client 
 from chromadb.config import Settings
-from config import CHROMA_DIR, COLLECTION_NAME
-
+#from config import CHROMA_DIR, COLLECTION_NAME
+load_dotenv()
+CHROMA_DIR = os.getenv('CHROMA_DIR')
+COLLECTION_NAME = os.getenv('COLLECTION_NAME')
 def get_chroma_client():
     """Initialise et retourne un client Chroma."""
     settings = Settings(

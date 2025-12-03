@@ -1,33 +1,45 @@
-# --- Image de base ---
-FROM python:3.11-slim
+## ------------------------------- Builder Stage ------------------------------ ##
+FROM python:3.11-slim AS builder
 
-# --- Variables d'environnement ---
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    curl && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python3 -m venv /opt/venv
+
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy and install Python dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+## ------------------------------- Production Stage ------------------------------ ##
+FROM python:3.11-slim AS production
+
+# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    PORT=8000
+    PORT=8000 \
+    PATH="/opt/venv/bin:$PATH"
 
-# --- Dossier de travail ---
+
+# Set working directory
 WORKDIR /rag-gemma
 
-# --- Dépendances système ---
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential git curl && \
-    rm -rf /var/lib/apt/lists/*
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
 
-# --- Copier requirements et installer ---
-COPY requirements.txt /rag-gemma/
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir chromadb[server]==0.5.7 \
-    flask flask-cors
+# Copy application code
+COPY . .
 
-# --- Copier le reste du projet ---
-COPY . /rag-gemma
-
-# --- Ports exposés ---
+# Expose port
 EXPOSE 8000
 
-# --- Commande par défaut pour lancer le serveur Flask ---
-CMD ["python3", "server.py"]
+# Run the application
+CMD ["python3", "app.py"]

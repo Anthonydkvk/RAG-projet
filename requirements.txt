@@ -5,3 +5,4 @@ requests==2.31.0
 transformers==4.34.0
 python-docx
 PyPDF2
+python-dotenv
