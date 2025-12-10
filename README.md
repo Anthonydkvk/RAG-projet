@@ -7,17 +7,21 @@ Ce dépôt contient une petite application RAG (Retrieval-Augmented Generation) 
 
 - `app.py` : Interface CLI simple pour vectoriser des documents et interagir en conversation avec Gemma.
 - `server.py` : API Flask qui expose des endpoints pour vectoriser, rechercher et interroger Gemma depuis une UI ou des clients externes.
-- `config.py` : Paramètres de configuration (chemins, URL d'Ollama, noms de modèles, etc.).
+- `chroma_utils.py` : Fonctions utilitaires pour créer/obtenir un client Chroma et les collections.
+- `embeddings.py` : Chargement du modèle d'embeddings et logique de vectorisation des documents (supporte .txt, .md, .docx, .pdf).
+- `ollama_utils.py` : Communication avec l'API Ollama (génération / chat du modèle Gemma).
 - `requirements.txt` : Dépendances Python nécessaires.
-- `Dockerfile` : Conteneurisation de l'application (expose le serveur Flask sur le port 8000).
+- `Dockerfile` : Conteneurisation de l'application RAG (expose le serveur Flask sur le port 8000).
+- `Dockerfile.ollama` : Dockerfile personnalisé pour Ollama avec le modèle gemma:2b pré-installé.
+- `compose.yaml` : Configuration Docker Compose pour orchestrer l'application RAG et Ollama ensemble.
 - `data/` : Contient les données et la persistance locale de Chroma (dossier `chromadb/` inclus).
-- `docs/` : Documents sources (.txt) utilisés comme base de connaissances pour l'indexation.
+- `docs/` : Documents sources (.txt, .md, .docx, .pdf) utilisés comme base de connaissances pour l'indexation.
 - `web/` : Front-end statique (HTML/JS/CSS) servi par `server.py`.
 
 ## Structure des dossiers (explication)
 
 - `app.py` — CLI pour :
-  - Vectoriser les documents présents dans `config.DATA_DIR` (par défaut `docs/`).
+  - Vectoriser les documents présents dans le dossier `docs/` (configurable via variable d'environnement `DATA_DIR`).
   - Interroger la base et afficher les documents similaires.
   - Discuter avec Gemma en mode conversation (contexte + historique).
 
@@ -27,24 +31,32 @@ Ce dépôt contient une petite application RAG (Retrieval-Augmented Generation) 
   - POST `/api/ask_gemma` : reçoit `{ "query": "...", "docs": [...], "history": [...] }` et renvoie la réponse du modèle.
   - Sert aussi les fichiers statiques depuis `web/`.
 
-- `chroma_utils.py` — Fonctions utilitaires pour créer/obtenir un client Chroma et les collections.
-- `embeddings.py` — Chargement du modèle d'embeddings et logique de vectorisation des documents.
+- `chroma_utils.py` — Fonctions utilitaires pour créer/obtenir un client Chroma et les collections. Utilise des variables d'environnement pour la configuration (`CHROMA_DIR`, `COLLECTION_NAME`).
+
+- `embeddings.py` — Chargement du modèle d'embeddings et logique de vectorisation des documents. 
+  - Supporte les formats : .txt, .md, .docx, .pdf
+  - Utilise des variables d'environnement : `EMBEDDING_MODEL`, `DATA_DIR`
+
 - `ollama_utils.py` — Communication avec l'API Ollama (génération / chat du modèle Gemma).
-- `config.py` — Valeurs modifiables :
-  - `COLLECTION_NAME` — nom de la collection Chroma utilisée.
-  - `DATA_DIR` — dossier où sont les fichiers à indexer (par défaut `docs`).
-  - `OLLAMA_URL` — URL de l'API Ollama (par défaut `http://host.docker.internal:11434/api/generate` pour Docker).
-  - `MODEL_NAME` — nom du modèle Ollama (ex: `gemma3:4b`).
-  - `EMBEDDING_MODEL` — identifiant du modèle d'embedding (ex: `sentence-transformers/all-MiniLM-L6-v2`).
-  - `CHROMA_DIR` — répertoire de persistance Chroma (`./chroma_db` par défaut).
+  - Utilise des variables d'environnement : `OLLAMA_URL`, `MODEL_NAME`
+
+- `Dockerfile` — Conteneurisation de l'application RAG avec build multi-stage pour optimiser la taille de l'image.
+
+- `Dockerfile.ollama` — Dockerfile personnalisé basé sur `ollama/ollama:rocm` qui pré-installe le modèle `gemma:2b`.
+
+- `compose.yaml` — Orchestration Docker Compose définissant deux services :
+  - `ollama` : Service Ollama avec le modèle gemma:2b (port 11435:11434)
+  - `rag-gemma` : Application RAG Flask (port 8000:8000)
+  - Réseau partagé `rag-network` pour la communication entre services
 
 - `data/chromadb/` — Base SQLite de Chroma si la persistance locale est utilisée. Ne pas supprimer si vous voulez garder l'index.
 
 ## Prérequis
 
-- Python 3.11+ (le Dockerfile utilise 3.11, l'environnement virtuel dans le repo cible Python 3.12)
-- Les libraies python nécessaires pour le fonctionnement du projet sont listés dans `requirements.txt`.
-- Installer Docker si ce n'est pas fait
+- Python 3.11+ (le Dockerfile utilise 3.11)
+- Les librairies Python nécessaires pour le fonctionnement du projet sont listées dans `requirements.txt`.
+- Un service Ollama accessible (local ou via Docker Compose).
+- Docker et Docker Compose (pour l'exécution conteneurisée).
 
 ## Installation locale
 
@@ -64,7 +76,7 @@ pip install -r requirements.txt
 
 ## Lancer l'application
 
-1) Mode CLI (interactif)
+### 1) Mode CLI (interactif)
 
 ```bash
 # Lance l'interface en ligne de commande
@@ -73,7 +85,7 @@ python app.py
 
 Le menu permet : vectoriser les documents (option 1), faire une recherche (option 2) ou discuter (option 3).
 
-2) Mode serveur (API + front-end)
+### 2) Mode serveur (API + front-end)
 
 ```bash
 python server.py
@@ -82,7 +94,7 @@ python server.py
 - Le serveur écoute par défaut sur le port 8000 (modifiable via la variable d'environnement `PORT`).
 - Ouvrez `http://localhost:8000/` pour accéder à l'interface web.
 
-3) Avec Docker
+### 3) Avec Docker (image unique)
 
 ```bash
 # Construire l'image
@@ -92,50 +104,51 @@ docker build -t rag-gemma:latest .
 docker run -p 8000:8000 --name rag-gemma rag-gemma:latest
 ```
 
-Note : Le `Dockerfile` configure par défaut `OLLAMA_URL` pour utiliser `host.docker.internal` (pratique si Ollama tourne sur l'hôte). Si Ollama est dans un autre conteneur, adaptez `OLLAMA_URL` ou utilisez un réseau Docker partagé.
+**Note** : Le `Dockerfile` configure par défaut `OLLAMA_URL` pour utiliser `host.docker.internal` (pratique si Ollama tourne sur l'hôte). Si Ollama est dans un autre conteneur, adaptez `OLLAMA_URL` ou utilisez Docker Compose.
 
-## Variables d'environnement utiles
+### 4) Avec Docker Compose (recommandé)
 
-- `PORT` : port sur lequel `server.py` écoute (par défaut 8000).
-- `OLLAMA_URL` : URL de l'API Ollama si vous voulez pointer vers un autre host.
-- `CHROMA_DIR` : dossier de persistance Chroma si vous changez l'emplacement.
+Docker Compose permet de lancer l'ensemble de l'infrastructure (Ollama + RAG) avec une seule commande :
+
+```bash
+
+# Ou en mode détaché (en arrière-plan)
+docker compose up -d --build
+# Pour lance le conteneur en mode intteractif
+docker compose run -it rag-gemma
+```
+
+**Services démarrés** :
+- `ollama` : Service Ollama avec le modèle gemma:2b pré-installé (port 11435:11434)
+- `rag-gemma` : Application RAG Flask (port 8000:8000)
+
+
+## Variables d'environnement
+
+L'application utilise des variables d'environnement (fichier `.env` ou définies directement) pour la configuration :
+
+- `PORT` : Port sur lequel `server.py` écoute (par défaut 8000).
+- `OLLAMA_URL` : URL de l'API Ollama (ex: `http://ollama:11434/api/generate` pour Docker Compose).
+- `MODEL_NAME` : Nom du modèle Ollama à utiliser (ex: `gemma:2b`).
+- `EMBEDDING_MODEL` : Modèle d'embedding à utiliser (ex: `sentence-transformers/all-MiniLM-L6-v2`).
+- `CHROMA_DIR` : Répertoire de persistance ChromaDB (ex: `./data/chromadb`).
+- `COLLECTION_NAME` : Nom de la collection ChromaDB (ex: `documents`).
+- `DATA_DIR` : Dossier contenant les documents à indexer (ex: `./docs`).
 
 Exemple pour démarrer le serveur sur le port 8080 :
 
 ```bash
-export PORT=8080
 python server.py
 ```
 
-## Endpoints API (exemples curl)
 
-- Vectoriser (POST) :
-
-```bash
-curl -X POST http://localhost:8000/api/vectorize
-```
-
-- Requête simple (POST) :
-
-```bash
-curl -X POST http://localhost:8000/api/query \
-  -H "Content-Type: application/json" \
-  -d '{"query": "Qui a écrit le document X?", "n_results": 3}'
-```
-
-- Poser une question à Gemma (POST) :
-
-```bash
-curl -X POST http://localhost:8000/api/ask_gemma \
-  -H "Content-Type: application/json" \
-  -d '{"query":"Quelle est la synthèse de ce document ?", "docs": ["texte1...", "texte2..."], "history": []}'
-```
 
 ## Remarques et bonnes pratiques
 
-- Sauvegardez le dossier `data/chromadb/` ou `CHROMA_DIR` si vous souhaitez conserver l'index entre les sessions.
-- Vérifiez que l'API Ollama est accessible à l'URL définie dans `config.py` avant d'utiliser les endpoints qui appellent `ollama_utils`.
-- Les modèles d'embeddings et les modèles Ollama peuvent nécessiter du CPU/GPU et du temps pour la génération/chargement : prévoyez des ressources suffisantes.
+- Sauvegardez le dossier `data/chromadb/` si vous souhaitez conserver l'index entre les sessions.
+- Avec Docker Compose, les services communiquent via le réseau `rag-network`. L'application RAG accède à Ollama via `http://ollama:11434`.
+- Pour Docker Compose, vous pouvez ajuster les ports dans le fichier `compose.yaml` si nécessaire.
+- Les fichiers supportés pour la vectorisation sont : .txt, .md, .docx, .pdf
 ## Équipe
 
 - DER KEVORKIAN Anthony

@@ -26,7 +26,5 @@ services:
       - ollama
     networks:
       - rag-network
-
-
 networks:
   rag-network:
