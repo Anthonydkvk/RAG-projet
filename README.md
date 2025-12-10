@@ -44,7 +44,7 @@ Ce dépôt contient une petite application RAG (Retrieval-Augmented Generation) 
 
 - Python 3.11+ (le Dockerfile utilise 3.11, l'environnement virtuel dans le repo cible Python 3.12)
 - Les libraies python nécessaires pour le fonctionnement du projet sont listés dans `requirements.txt`.
-- Un service Ollama accessible si vous utilisez le modèle local via Ollama (voir `OLLAMA_URL` dans `config.py`).
+- Installer Docker si ce n'est pas fait
 
 ## Installation locale
 
